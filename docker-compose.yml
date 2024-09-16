@@ -1,0 +1,6 @@
+﻿services:
+  publicholidaysapi:
+    image: publicholidaysapi
+    build:
+      context: .
+      dockerfile: PublicHolidaysApi/Dockerfile
