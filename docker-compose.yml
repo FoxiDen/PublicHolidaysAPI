@@ -3,4 +3,6 @@
     image: publicholidaysapi
     build:
       context: .
-      dockerfile: PublicHolidaysApi/Dockerfile
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"

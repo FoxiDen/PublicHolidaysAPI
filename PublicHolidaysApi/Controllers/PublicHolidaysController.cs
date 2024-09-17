@@ -17,7 +17,7 @@ public class PublicHolidaysController : ControllerBase
     }
 
     [HttpGet("SupportedCountries")]
-    public async Task<ActionResult<List<string>>> GetSupportedCountries()
+    public async Task<ActionResult<SupportedCountriesDto>> GetSupportedCountries()
     {
         try
         {
@@ -25,13 +25,13 @@ public class PublicHolidaysController : ControllerBase
             return Ok(countries);
         }
         catch (Exception ex)
-        { 
+        {
             return HandleException(ex);
         }
     }
 
     [HttpGet("DayStatus/{countryCode}/{date:datetime}")]
-    public async Task<ActionResult<DayStatus>> GetDayStatus(CountryCode countryCode, DateTime date)
+    public async Task<ActionResult<DayStatus>> GetDayStatus(CountryCode countryCode, DateOnly date)
     {
         try
         {

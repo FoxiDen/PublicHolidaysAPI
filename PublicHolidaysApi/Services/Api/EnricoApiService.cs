@@ -1,5 +1,6 @@
 using PublicHolidaysApi.Helpers;
 using PublicHolidaysApi.Models;
+using PublicHolidaysApi.Models.Enrico;
 
 namespace PublicHolidaysApi.Services.Api;
 
@@ -41,7 +42,7 @@ public class EnricoApiService : ApiServiceBase, IEnricoApiService
         return await GetResponseAsync<EnricoPublicHolidayStatusDto>(IsPublicHolidayEndpoint + queryString);
     }
 
-    public async Task<DateWithDayOfWeekDto> GetNextWorkDayAsync(CountryCode country, DateTime date, int? deltaDays = null)
+    public async Task<DateWithDayOfWeekDto> GetNextWorkDayAsync(CountryCode country, DateOnly date, int? deltaDays = null)
     {
         var parameters = new Dictionary<string, string>
         {

@@ -1,9 +1,11 @@
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using PublicHolidaysApi.Helpers;
+using PublicHolidaysApi.Data;
 using PublicHolidaysApi.Models;
 using PublicHolidaysApi.Services;
 using PublicHolidaysApi.Services.Api;
+using PublicHolidaysApi.Services.Database;
 
 namespace PublicHolidaysApi;
 
@@ -15,26 +17,30 @@ public class Program
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
+        
         builder.Services.AddSwaggerGen(x =>
         {
             x.MapType<CountryCode>(() => new OpenApiSchema { Type = "string" });
         });
+        
         builder.Services.AddControllers().AddJsonOptions(x =>
         {
             x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
+
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging());
+        
         ConfigureCustomServices(builder.Services);
         
         var app = builder.Build();
-
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+        
+        app.UseSwagger();
+        app.UseSwaggerUI();
 
         app.UseHttpsRedirection();
         app.UseAuthorization();
+        
         app.MapControllers();
         
         app.Run();
@@ -49,5 +55,6 @@ public class Program
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         });
         services.AddTransient<IHolidayService, HolidayService>();
+        services.AddTransient<IDatabaseService, DatabaseService>();
     }
 }

@@ -1,4 +1,4 @@
-namespace PublicHolidaysApi.Models;
+namespace PublicHolidaysApi.Models.Enrico;
 
 public record EnricoSchoolHolidayStatusDto
 {
