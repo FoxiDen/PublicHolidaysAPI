@@ -5,8 +5,8 @@ namespace PublicHolidaysApi.Services;
 
 public interface IHolidayService
 {
-    Task<SupportedCountriesCodesDto> GetSupportedCountriesAsync();
-    Task<DayStatus> GetSpecificDayStatusAsync(CountryCode country, DateTime date);
-    Task<GroupedHolidaysDto> GetHolidaysAsync(CountryCode country, int year);
+    Task<SupportedCountriesDto> GetSupportedCountriesAsync();
+    Task<DayStatus> GetSpecificDayStatusAsync(CountryCode country, DateOnly date);
+    Task<GroupedHolidaysDto> GetHolidaysAsync(CountryCode countryCode, int year);
     Task<int> GetMaximumFreeDays(CountryCode country, int year);
 }

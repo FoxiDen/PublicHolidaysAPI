@@ -1,78 +1,86 @@
-using PublicHolidaysApi.Enums;
 using PublicHolidaysApi.Helpers;
 using PublicHolidaysApi.Models;
 using PublicHolidaysApi.Services.Api;
+using PublicHolidaysApi.Enums;
+using PublicHolidaysApi.Models.Database;
+using PublicHolidaysApi.Services.Database;
 
 namespace PublicHolidaysApi.Services
 {
     public class HolidayService : IHolidayService
     {
         private readonly IEnricoApiService _enricoApiService;
+        private readonly IDatabaseService _databaseService;
 
-        public HolidayService(IEnricoApiService enricoApiService)
+        public HolidayService(IEnricoApiService enricoApiService, IDatabaseService databaseService)
         {
             _enricoApiService = enricoApiService;
+            _databaseService = databaseService;
         }
 
-        public async Task<SupportedCountriesCodesDto> GetSupportedCountriesAsync()
+        public async Task<SupportedCountriesDto> GetSupportedCountriesAsync()
         {
-            var supportedCountries = await _enricoApiService.GetSupportedCountriesAsync();
-            return MappingHelper.MapToSupportedCountryCodeList(supportedCountries);
+            var existingCountries = await _databaseService.GetSupportedCountriesAsync();
+            if (existingCountries.Any())
+            {
+                return new SupportedCountriesDto { SupportedCountries = existingCountries };
+            }
+            
+            var countriesFromApi = await _enricoApiService.GetSupportedCountriesAsync();
+            var newCountriesDto = MappingHelper.ToSupportedCountriesDto(countriesFromApi);
+            await _databaseService.AddSupportedCountriesAsync(newCountriesDto.SupportedCountries);
+            
+            return newCountriesDto;
         }
 
-        public async Task<GroupedHolidaysDto> GetHolidaysAsync(CountryCode country, int year)
+        public async Task<GroupedHolidaysDto> GetHolidaysAsync(CountryCode countryCode, int year)
         {
-            var holidaysForYear = await _enricoApiService.GetHolidaysForYearAsync(country, year);
-            return MappingHelper.MapToGroupedHolidaysByMonth(holidaysForYear);
+            var existingHolidays = await _databaseService.GetHolidaysAsync(countryCode, year);
+            if (existingHolidays.Any())
+            {
+                return MappingHelper.ToGroupedHolidaysDto(existingHolidays);
+            }
+            
+            var holidaysForYearFromApi = await _enricoApiService.GetHolidaysForYearAsync(countryCode, year);
+            await _databaseService.AddHolidaysAsync(MappingHelper.ToHolidayEntityList(holidaysForYearFromApi, countryCode.Value));
+            
+            return MappingHelper.ToGroupedHolidaysDto(holidaysForYearFromApi);
         }
 
-        public async Task<DayStatus> GetSpecificDayStatusAsync(CountryCode country, DateTime date)
+        public async Task<DayStatus> GetSpecificDayStatusAsync(CountryCode country, DateOnly date)
         {
+            var existingDayStatus = await _databaseService.GetDayStatusAsync(country, date);
+            if (existingDayStatus != null)
+            {
+                return (DayStatus)Enum.Parse(typeof(DayStatus), existingDayStatus.Status);
+            }
+            
             var parameters = new Dictionary<string, string>
             {
                 { nameof(date), date.ToString("yyyy-MM-dd") },
                 { nameof(country), country.Value }
             };
-        
             var queryString = parameters.ToQueryString();
-            return await DetermineDayStatusAsync(queryString);
+            
+            var dayStatusFromApi = await DetermineDayStatusAsync(queryString);
+            await _databaseService.AddDayStatusAsync(new DayStatusEntity { CountryCode = country.Value, Date = date, Status = dayStatusFromApi.ToString() });
+            
+            return dayStatusFromApi;
         }
         
         public async Task<int> GetMaximumFreeDays(CountryCode country, int year)
         {
-            var holidays = await _enricoApiService.GetHolidaysForYearAsync(country, year);
-
-            var freeDays = new HashSet<DateTime>();
-            foreach (var holiday in holidays)
+            var existingMaximumFreeDays = await _databaseService.GetMaxConsecutiveFreeDaysAsync(country, year);
+            if (existingMaximumFreeDays != null)
             {
-                var date = new DateTime(holiday.Date.Year, holiday.Date.Month, holiday.Date.Day);
-                freeDays.Add(date);
+                return existingMaximumFreeDays.MaxConsecutiveDays;
             }
-
-            int maxFreeDays = 0;
             
-            foreach (var day in freeDays)
-            {
-                var prevWorkDayDto = await _enricoApiService.GetNextWorkDayAsync(country, day, -1);
-                var nextWorkDayDto = await _enricoApiService.GetNextWorkDayAsync(country, day, 1);
+            var maxConsecutiveFreeDays = await GetMaxConsecutiveFreeDaysAsync(country, year);
+            await _databaseService.AddMaxConsecutiveFreeDaysAsync(
+                new MaxConsecutiveFreeDaysEntity { CountryCode = country.Value, MaxConsecutiveDays = maxConsecutiveFreeDays, Year = year });
 
-                var prevWorkDay = new DateTime(prevWorkDayDto.Year, prevWorkDayDto.Month, prevWorkDayDto.Day);
-                var nextWorkDay = new DateTime(nextWorkDayDto.Year, nextWorkDayDto.Month, nextWorkDayDto.Day);
-                
-                if (prevWorkDay.Year != year)
-                {
-                    prevWorkDay = new DateTime(year, 1, 1);
-                }
-                if (nextWorkDay.Year != year)
-                {
-                    nextWorkDay = new DateTime(year, 12, 31);
-                }
-
-                var currentFreeDaysCount = (nextWorkDay - prevWorkDay).Days - 1;
-                maxFreeDays = Math.Max(currentFreeDaysCount, maxFreeDays);
-            }
-
-            return maxFreeDays;
+            return maxConsecutiveFreeDays;
         }
     
         private async Task<DayStatus> DetermineDayStatusAsync(string queryString)
@@ -88,6 +96,43 @@ namespace PublicHolidaysApi.Services
             }
 
             return DayStatus.FreeDay;
+        }
+        
+        private async Task<int> GetMaxConsecutiveFreeDaysAsync(CountryCode country, int year)
+        {
+            var holidaysFromApi = await _enricoApiService.GetHolidaysForYearAsync(country, year);
+
+            var freeDays = new HashSet<DateOnly>();
+            foreach (var holiday in holidaysFromApi)
+            {
+                var date = new DateOnly(holiday.Date.Year, holiday.Date.Month, holiday.Date.Day);
+                freeDays.Add(date);
+            }
+            
+            int maxConsecutiveFreeDays = 0;
+    
+            foreach (var day in freeDays)
+            {
+                var prevWorkDayDto = await _enricoApiService.GetNextWorkDayAsync(country, day, -1);
+                var nextWorkDayDto = await _enricoApiService.GetNextWorkDayAsync(country, day, 1);
+
+                var prevWorkDay = new DateOnly(prevWorkDayDto.Year, prevWorkDayDto.Month, prevWorkDayDto.Day);
+                var nextWorkDay = new DateOnly(nextWorkDayDto.Year, nextWorkDayDto.Month, nextWorkDayDto.Day);
+
+                if (prevWorkDay.Year != year)
+                {
+                    prevWorkDay = new DateOnly(year, 1, 1);
+                }
+                if (nextWorkDay.Year != year)
+                {
+                    nextWorkDay = new DateOnly(year, 12, 31);
+                }
+
+                var currentFreeDaysCount = nextWorkDay.Day - prevWorkDay.Day - 1;
+                maxConsecutiveFreeDays = Math.Max(currentFreeDaysCount, maxConsecutiveFreeDays);
+            }
+
+            return maxConsecutiveFreeDays;
         }
     }
 }

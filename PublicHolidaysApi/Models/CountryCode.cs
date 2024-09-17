@@ -11,6 +11,12 @@ public partial struct CountryCode
         {
             return Validation.Invalid("CountryCode must be made out of 3 characters.");
         }
+        
+        if (!value.All(char.IsLetter))
+        {
+            return Validation.Invalid("CountryCode must only contain letters.");
+        }
+
         return Validation.Ok;
     }
 }
