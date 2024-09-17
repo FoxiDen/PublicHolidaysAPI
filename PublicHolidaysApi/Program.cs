@@ -1,3 +1,10 @@
+using System.Text.Json.Serialization;
+using Microsoft.OpenApi.Models;
+using PublicHolidaysApi.Helpers;
+using PublicHolidaysApi.Models;
+using PublicHolidaysApi.Services;
+using PublicHolidaysApi.Services.Api;
+
 namespace PublicHolidaysApi;
 
 public class Program
@@ -6,16 +13,20 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
-
         builder.Services.AddControllers();
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-
+        builder.Services.AddSwaggerGen(x =>
+        {
+            x.MapType<CountryCode>(() => new OpenApiSchema { Type = "string" });
+        });
+        builder.Services.AddControllers().AddJsonOptions(x =>
+        {
+            x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
+        ConfigureCustomServices(builder.Services);
+        
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -23,12 +34,20 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-
         app.UseAuthorization();
-
-
         app.MapControllers();
-
+        
         app.Run();
+    }
+
+    private static void ConfigureCustomServices(IServiceCollection services)
+    {
+        services.AddHttpClient<IEnricoApiService, EnricoApiService>(client =>
+        {
+            client.BaseAddress = new Uri("https://kayaposoft.com/enrico/json/v3.0");
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        });
+        services.AddTransient<IHolidayService, HolidayService>();
     }
 }
