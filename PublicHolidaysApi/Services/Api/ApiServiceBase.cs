@@ -1,7 +1,10 @@
 using System.Text.Json;
 
-namespace PublicHolidaysApi.Services;
+namespace PublicHolidaysApi.Services.Api;
 
+/// <summary>
+/// A base class for API services.
+/// </summary>
 public abstract class ApiServiceBase
 {
     private readonly HttpClient _httpClient;
@@ -10,11 +13,17 @@ public abstract class ApiServiceBase
         PropertyNameCaseInsensitive = true 
     };
     
+    /// ctor
     protected ApiServiceBase(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
 
+    /// <summary>
+    /// Sends a GET request to the specified endpoint and deserializes the response.
+    /// </summary>
+    /// <typeparam name="T">The type to deserialize the response into.</typeparam>
+    /// <param name="endpoint">The endpoint to send the request to.</param>
     protected async Task<T> GetResponseAsync<T>(string endpoint)
     {
         var response = await _httpClient.GetAsync(_httpClient.BaseAddress + endpoint);

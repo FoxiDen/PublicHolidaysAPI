@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -9,8 +10,14 @@ using PublicHolidaysApi.Services.Database;
 
 namespace PublicHolidaysApi;
 
+/// <summary>
+/// The entry point for the application and the main configuration class.
+/// </summary>
 public class Program
 {
+    /// <summary>
+    /// The main method that configures and runs the web application.
+    /// </summary>
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +28,10 @@ public class Program
         builder.Services.AddSwaggerGen(x =>
         {
             x.MapType<CountryCode>(() => new OpenApiSchema { Type = "string" });
+
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            x.IncludeXmlComments(xmlPath);
         });
         
         builder.Services.AddControllers().AddJsonOptions(x =>
@@ -29,7 +40,7 @@ public class Program
         });
 
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging());
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
         
         ConfigureCustomServices(builder.Services);
         
@@ -46,7 +57,7 @@ public class Program
         app.Run();
     }
 
-    private static void ConfigureCustomServices(IServiceCollection services)
+    internal static void ConfigureCustomServices(IServiceCollection services)
     {
         services.AddHttpClient<IEnricoApiService, EnricoApiService>(client =>
         {

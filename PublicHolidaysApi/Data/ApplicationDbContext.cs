@@ -1,22 +1,43 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using PublicHolidaysApi.Models;
 using PublicHolidaysApi.Models.Database;
 
 namespace PublicHolidaysApi.Data;
 
+/// <summary>
+/// Database context for the Public Holidays API.
+/// </summary>
 public class ApplicationDbContext : DbContext
 {
+    /// <summary>
+    /// Represents the supported countries table in the database.
+    /// </summary>
     public DbSet<SupportedCountryEntity> SupportedCountries { get; set; }
+        
+    /// <summary>
+    /// Represents the day statuses table in the database.
+    /// </summary>
     public DbSet<DayStatusEntity> DayStatuses { get; set; }
+        
+    /// <summary>
+    /// Represents the maximum consecutive free days table in the database.
+    /// </summary>
     public DbSet<MaxConsecutiveFreeDaysEntity> MaxConsecutiveFreeDays { get; set; }
+        
+    /// <summary>
+    /// Represents the holidays table in the database.
+    /// </summary>
     public DbSet<HolidayEntity> Holidays { get; set; }
     
+    /// ctor
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
     
+    /// <summary>
+    /// Configures the model and relationships for the database context.
+    /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<SupportedCountryEntity>()
