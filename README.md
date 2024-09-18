@@ -49,7 +49,7 @@ Hosted on: [https://publicholidaysapi-b2dkevacbydfbqdq.northeurope-01.azurewebsi
 
 ## Managing the MSSQL Database
 
-The database is hosted on MS Azure. If you'd like to reset it to clear state, run these commands for migrations from the repository directory:
+The database is hosted on MS Azure. If you'd like to reset it to clear state, run these commands for migrations from the repository-directory/PublicHolidaysApi folder:
 
     dotnet ef database update 0
     dotnet ef database update
