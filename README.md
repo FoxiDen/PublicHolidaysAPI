@@ -2,11 +2,10 @@
 
 ## Prerequisites
 
-* **Docker** ([https://docs.docker.com/desktop/install/windows-install/](https://docs.docker.com/desktop/install/windows-install/)) installed
-* **Docker Compose** ([https://docs.docker.com/compose/install/](https://docs.docker.com/compose/install/)) installed
-* **.NET SDK** ([https://dotnet.microsoft.com/en-us/download](https://dotnet.microsoft.com/en-us/download)) installed
-* **Entity Framework Core Tools** ([https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/))  
-  installed
+* **Docker** ([https://docs.docker.com/desktop/install/windows-install/](https://docs.docker.com/desktop/install/windows-install/))
+* **Docker Compose** ([https://docs.docker.com/compose/install/](https://docs.docker.com/compose/install/))
+* **.NET SDK** ([https://dotnet.microsoft.com/en-us/download](https://dotnet.microsoft.com/en-us/download))
+* **Entity Framework Core Tools** ([https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/)) 
 
 ## Deploying with Docker
 
