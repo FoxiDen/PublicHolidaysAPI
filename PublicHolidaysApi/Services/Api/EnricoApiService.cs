@@ -4,6 +4,7 @@ using PublicHolidaysApi.Models.Enrico;
 
 namespace PublicHolidaysApi.Services.Api;
 
+/// <inheritdoc cref="IEnricoApiService" />
 public class EnricoApiService : ApiServiceBase, IEnricoApiService
 {
     private const string GetSupportedCountriesEndpoint = "/getSupportedCountries";
@@ -12,15 +13,18 @@ public class EnricoApiService : ApiServiceBase, IEnricoApiService
     private const string IsWorkDayEndpoint = "/isWorkDay/";
     private const string IsPublicHolidayEndpoint = "/isPublicHoliday/";
 
+    /// ctor
     public EnricoApiService(HttpClient httpClient) : base(httpClient)
     {
     }
 
+    /// <inheritdoc/>
     public async Task<List<EnricoSupportedCountriesDto>> GetSupportedCountriesAsync()
     {
         return await GetResponseAsync<List<EnricoSupportedCountriesDto>>(GetSupportedCountriesEndpoint);
     }
 
+    /// <inheritdoc/>
     public async Task<List<EnricoHolidaysDto>> GetHolidaysForYearAsync(CountryCode country, int year)
     {
         var parameters = new Dictionary<string, string>
@@ -32,16 +36,31 @@ public class EnricoApiService : ApiServiceBase, IEnricoApiService
         return await GetResponseAsync<List<EnricoHolidaysDto>>(GetHolidaysForYear + parameters.ToQueryString());
     }
 
-    public async Task<EnricoWorkDayStatusDto> GetWorkDayStatusAsync(string queryString)
+    /// <inheritdoc/>
+    public async Task<EnricoWorkDayStatusDto> GetWorkDayStatusAsync(CountryCode country, DateOnly date)
     {
-        return await GetResponseAsync<EnricoWorkDayStatusDto>(IsWorkDayEndpoint + queryString);
+        var parameters = new Dictionary<string, string>
+        {
+            { nameof(date), date.ToString("yyyy-MM-dd") },
+            { nameof(country), country.Value }
+        };
+        
+        return await GetResponseAsync<EnricoWorkDayStatusDto>(IsWorkDayEndpoint + parameters.ToQueryString());
     }
 
-    public async Task<EnricoPublicHolidayStatusDto> GetPublicHolidayStatusAsync(string queryString)
+    /// <inheritdoc/>
+    public async Task<EnricoPublicHolidayStatusDto> GetPublicHolidayStatusAsync(CountryCode country, DateOnly date)
     {
-        return await GetResponseAsync<EnricoPublicHolidayStatusDto>(IsPublicHolidayEndpoint + queryString);
+        var parameters = new Dictionary<string, string>
+        {
+            { nameof(date), date.ToString("yyyy-MM-dd") },
+            { nameof(country), country.Value }
+        };
+        
+        return await GetResponseAsync<EnricoPublicHolidayStatusDto>(IsPublicHolidayEndpoint + parameters.ToQueryString());
     }
 
+    /// <inheritdoc/>
     public async Task<DateWithDayOfWeekDto> GetNextWorkDayAsync(CountryCode country, DateOnly date, int? deltaDays = null)
     {
         var parameters = new Dictionary<string, string>
